@@ -152,7 +152,7 @@ export class StatusCodes {
       run: () => this.reusedKey(),
     },
     {
-      code: 429, title: 'Rate limit estourado', request: `${BURST_SIZE} x GET /artists de uma vez\n(token bucket com 100 tokens)`,
+      code: 429, title: 'Rate limit estourado', request: `${BURST_SIZE} x GET /artists de uma vez\n(token bucket com 30 tokens)`,
       run: () => this.burst(),
     },
   ];
@@ -248,7 +248,7 @@ export class StatusCodes {
     return second;
   }
 
-  /** Dispara várias requisições de uma vez: o bucket tem 100 tokens, então as que sobram recebem 429. */
+  /** Dispara várias requisições de uma vez: o bucket tem 30 tokens, então as que sobram recebem 429. */
   private async burst(): Promise<Outcome> {
     const context = new HttpContext().set(QUIET, true);
     const calls = Array.from({ length: BURST_SIZE }, () =>
@@ -268,7 +268,7 @@ export class StatusCodes {
       refused.length ? 'error' : 'ok',
     );
     const note = `${accepted} aceitas (200 OK) e ${refused.length} recusadas (429 Too Many Requests). ` +
-      'Os tokens voltam aos poucos, um a cada 0,6 s.';
+      'Os tokens voltam aos poucos, um a cada 2 s.';
     if (!refused.length) {
       return { status: 200, note };
     }
