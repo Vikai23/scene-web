@@ -1,6 +1,6 @@
 # Scene Web
 
-Front-end em **Angular 21** que consome a [Scene API](https://github.com/Vikai23/scene-api) (Spring Boot). Ele lista, busca, cria, edita e exclui artistas, perfis, álbuns, faixas e playlists. Também navega pelos links HATEOAS de cada resposta, compara as duas versões da API lado a lado e tem uma aba **Status codes** que provoca cada status de erro da API.
+Front-end em **Angular 21** que consome a [Scene API](https://github.com/Vikai23/scene-api) (Spring Boot). Ele lista, busca, cria, edita e exclui artistas, perfis, álbuns, faixas e playlists, usando a chave de API que as rotas de escrita exigem. Também navega pelos links HATEOAS de cada resposta, compara as duas versões da API lado a lado e tem uma aba **Status codes** que provoca cada status de erro da API.
 
 > Projeto final de Web Services (Senac TSI), Parte 2. A API e este front ficam em repositórios separados: são duas origens diferentes, e o CORS é a ponte entre elas.
 
@@ -32,7 +32,7 @@ Esse comando sobe o mesmo front na porta 4300, que não está na lista da API. A
 | Rota | O que faz |
 | :-- | :-- |
 | `/artists`, `/artist-profiles`, `/albums`, `/tracks` e `/playlists` | Lista paginada com busca, filtro (gênero, formato ou visibilidade), `sort` e `size`. Os detalhes mostram os campos, os links HATEOAS e as ações `PUT` e `DELETE`. Também tem cadastro e edição |
-| `/status-codes` | Status codes: 16 botões que provocam de propósito cada erro da API (`400`, `403` do CORS, `404`, `405`, `406`, `409`, `415`, `422` e `429`) |
+| `/status-codes` | Status codes: 19 botões que provocam de propósito cada erro da API (`400`, `401` da chave de API, `403` do CORS, `404`, `405`, `406`, `409`, `415`, `422` e `429`) |
 
 O que dá para fazer nas telas:
 
@@ -47,9 +47,10 @@ O que dá para fazer nas telas:
 
 - **CORS:** o front (`:4200`) e a API (`:8080`) são origens diferentes. O topo da página mostra as duas e se o CORS liberou a ligação entre elas.
 - **Idempotência:** todo `POST` leva um `X-Idempotency-Key`, um UUID gerado no navegador. Depois do `201`, o botão *Repetir o mesmo POST com a mesma key* faz a API devolver a resposta original com `X-Idempotent-Replayed: true`, sem criar nada.
+- **Chave de API:** a janela *api-key.exe* gera a chave (`POST /api-keys`), confere (`GET /api-keys/me`) e revoga (`DELETE /api-keys/me`). Com uma chave ativa, todo `POST`, `PUT` e `DELETE` leva o header `X-API-Key`; sem ela, a API devolve `401 Unauthorized`. A chave fica só na memória da página, então recarregar pede uma nova.
 - **Rate limiting:** o topo mostra os tokens que restam no bucket (`X-RateLimit-Limit` e `X-RateLimit-Remaining`). Depois de um `429`, ele mostra a contagem regressiva do `Retry-After`.
-- **Versionamento:** o front usa a versão padrão (1). Nos detalhes de um artista, o botão *Comparar v1 e v2* busca o mesmo artista com `X-API-Version: 1` e `2` e mostra os dois JSON lado a lado. A aba Status codes mostra o `400` de uma versão que não existe. No Swagger da API, o seletor *Versão da API* troca a documentação inteira.
-- **Tráfego:** a janela ao lado registra cada chamada, com os headers enviados e recebidos e o status.
+- **Versionamento:** o front usa a versão padrão (1). Nos detalhes de um artista, o botão *Comparar v1 e v2* busca o mesmo artista com `X-API-Version: 1` e `2`, mostra numa tabela o que muda de uma versão para a outra e coloca os dois JSON lado a lado. A aba Status codes mostra o `400` de uma versão que não existe. No Swagger da API, o seletor *Versão da API* troca a documentação inteira.
+- **Tráfego:** a janela ao lado registra cada chamada, com os headers enviados e recebidos e o status. A chave de API aparece só pelo começo.
 
 ## Estrutura
 
@@ -57,14 +58,15 @@ O que dá para fazer nas telas:
 src/app
 ├── core/                    serviços e tipos compartilhados
 │   ├── api.config.ts            URL da API e nomes dos headers
-│   ├── api.interceptor.ts       roda em toda chamada: Accept, rate limit, CORS, Tráfego e erros
+│   ├── api.interceptor.ts       roda em toda chamada: Accept, chave de API, rate limit, CORS, Tráfego e erros
+│   ├── api-key.service.ts       gera, confere e revoga a chave de API (X-API-Key)
 │   ├── scene-api.service.ts     todas as chamadas à API
 │   ├── resources.ts             os 5 recursos: rotas, campos, sort, busca, filtro e links
 │   ├── models.ts                tipos que espelham o JSON da API
 │   ├── status.service.ts        estado do CORS e do rate limit (signals)
 │   ├── traffic.service.ts       registro do Tráfego
 │   └── navigation.service.ts    pedidos de uma aba para outra (seguir um link, abrir um cadastro já preenchido)
-├── shared/                  caixa de resposta e janela de Tráfego
+├── shared/                  caixa de resposta, janela da chave de API e janela de Tráfego
 └── pages/
     ├── resources/               aba de cada recurso: lista, detalhes, formulário, faixas da playlist e versões do artista
     └── status-codes/            aba Status codes

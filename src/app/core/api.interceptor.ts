@@ -2,7 +2,8 @@ import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn, HttpResponse } 
 import { inject } from '@angular/core';
 import { catchError, from, mergeMap, tap, throwError } from 'rxjs';
 
-import { API_URL, RETRY_AFTER_HEADER } from './api.config';
+import { ApiKeyService } from './api-key.service';
+import { API_KEY_HEADER, API_URL, RETRY_AFTER_HEADER } from './api.config';
 import { ApiError, FieldIssue } from './models';
 import { StatusService } from './status.service';
 import { TrafficService } from './traffic.service';
@@ -13,9 +14,16 @@ export const QUIET = new HttpContextToken<boolean>(() => false);
 /** Uma falha de rede nesta chamada não muda o estado da ligação no topo (os testes de bloqueio da aba Status codes). */
 export const KEEP_CONNECTION = new HttpContextToken<boolean>(() => false);
 
+/** Não manda a chave de API desta página (o card de 401 sem chave da aba Status codes). */
+export const NO_API_KEY = new HttpContextToken<boolean>(() => false);
+
+/** Métodos que alteram dados: na API, essas rotas exigem o header X-API-Key. */
+const WRITE_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
+
 /**
- * Roda em toda chamada para a API: pede JSON, informa o Content-Type, atualiza o rate limit e o estado da
- * ligação (CORS), registra no Tráfego e transforma qualquer erro num ApiError com status, message e details.
+ * Roda em toda chamada para a API: pede JSON, informa o Content-Type, manda a chave de API nas escritas, atualiza o
+ * rate limit e o estado da ligação (CORS), registra no Tráfego e transforma qualquer erro num ApiError com status,
+ * message e details.
  */
 export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   if (!req.url.startsWith(API_URL)) {
@@ -31,6 +39,10 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   const contentType = req.detectContentTypeHeader();
   if (req.body !== null && !req.headers.has('Content-Type') && contentType) {
     headers['Content-Type'] = contentType;
+  }
+  const key = inject(ApiKeyService).key();
+  if (key && WRITE_METHODS.has(req.method) && !req.headers.has(API_KEY_HEADER) && !req.context.get(NO_API_KEY)) {
+    headers[API_KEY_HEADER] = key;
   }
   const request = req.clone({ setHeaders: headers });
   const quiet = request.context.get(QUIET);

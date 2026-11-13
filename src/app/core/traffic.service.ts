@@ -1,7 +1,7 @@
 import { HttpHeaders, HttpRequest } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
 
-import { API_URL } from './api.config';
+import { API_KEY_HEADER, API_URL } from './api.config';
 import { statusText } from './http-status';
 
 export interface TrafficEntry {
@@ -16,7 +16,7 @@ export interface TrafficEntry {
 }
 
 /** Headers que aparecem no Tráfego: os que o front envia e os da Parte 2 que a API devolve. */
-const SENT_HEADERS = ['X-Idempotency-Key', 'Content-Type', 'Accept', 'X-API-Version', 'X-Teste'];
+const SENT_HEADERS = [API_KEY_HEADER, 'X-Idempotency-Key', 'Content-Type', 'Accept', 'X-API-Version', 'X-Teste'];
 const RECEIVED_HEADERS = ['Location', 'X-Idempotent-Replayed', 'X-RateLimit-Remaining', 'Retry-After'];
 const MAX_ENTRIES = 150;
 
@@ -67,7 +67,15 @@ function describe(request: HttpRequest<unknown>): string {
 }
 
 function sentHeaders(request: HttpRequest<unknown>): string[] {
-  return SENT_HEADERS.filter((name) => request.headers.has(name)).map((name) => `${name}: ${request.headers.get(name)}`);
+  return SENT_HEADERS.filter((name) => request.headers.has(name)).map((name) => {
+    const value = request.headers.get(name) ?? '';
+    return `${name}: ${name === API_KEY_HEADER ? mask(value) : value}`;
+  });
+}
+
+/** A chave de API aparece no Tráfego só pelo começo, como o prefixo que a própria API mostra. */
+function mask(key: string): string {
+  return key.length > 12 ? `${key.slice(0, 12)}…` : key;
 }
 
 /** Caminho e query de uma URL da API, para mostrar na tela (ex.: /artists?page=0&size=10). */

@@ -5,6 +5,7 @@
 export const API_URL = 'http://localhost:8080';
 
 /** Headers da Parte 2 que o front envia ou lê. */
+export const API_KEY_HEADER = 'X-API-Key';
 export const IDEMPOTENCY_HEADER = 'X-Idempotency-Key';
 export const REPLAYED_HEADER = 'X-Idempotent-Replayed';
 export const LIMIT_HEADER = 'X-RateLimit-Limit';

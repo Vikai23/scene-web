@@ -2,7 +2,8 @@ import { HttpContext } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { catchError, firstValueFrom, forkJoin, map, of } from 'rxjs';
 
-import { KEEP_CONNECTION, QUIET } from '../../core/api.interceptor';
+import { KEEP_CONNECTION, NO_API_KEY, QUIET } from '../../core/api.interceptor';
+import { API_KEY_HEADER } from '../../core/api.config';
 import { STATUS_NAMES, statusText } from '../../core/http-status';
 import { Item, Outcome, errorOutcome, isApiError } from '../../core/models';
 import { RawOptions, SceneApiService, newIdempotencyKey } from '../../core/scene-api.service';
@@ -24,7 +25,18 @@ interface CaseResult {
   hit: boolean;
 }
 
+/** Opções de uma requisição dos cards: as do SceneApiService e "noKey", para o card de 401 sem chave. */
+interface CaseOptions extends RawOptions {
+  noKey?: boolean;
+}
+
 const BURST_SIZE = 120;
+
+/** Métodos que exigem a chave de API (o card de cada um usa a chave própria desta aba). */
+const WRITE_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
+
+/** Chave que ninguém gerou: a API responde 401 com a mensagem de chave inválida. */
+const UNKNOWN_KEY = 'scn_chave-que-nao-existe';
 
 /** Status codes: cada card provoca de propósito um status de erro da API, do jeito que um cliente erraria. */
 @Component({
@@ -38,6 +50,9 @@ export class StatusCodes {
 
   protected readonly results = signal<Record<number, CaseResult | undefined>>({});
   protected readonly running = signal<number | null>(null);
+
+  /** Chave de API desta aba, gerada na primeira escrita: os casos de 400, 409, 415 e 422 precisam passar do 401. */
+  private labKey: string | null = null;
 
   protected readonly cases: StatusCase[] = [
     {
@@ -70,6 +85,26 @@ export class StatusCodes {
         body: { name: 'Playlist Lab', visibility: 'PUBLIC' },
         headers: { 'X-Idempotency-Key': 'chave com espaco!' },
       }),
+    },
+    {
+      code: 401, title: 'Escrita sem chave de API', request: 'POST /artists\n(sem o header X-API-Key)',
+      run: () => this.call('POST', '/artists', {
+        body: { name: 'Banda Lab', genre: 'ROCK' },
+        context: new HttpContext().set(NO_API_KEY, true),
+        noKey: true,
+      }),
+    },
+    {
+      code: 401, title: 'Chave de API que não existe', request: `POST /artists\nX-API-Key: ${UNKNOWN_KEY}`,
+      run: () => this.call('POST', '/artists', {
+        body: { name: 'Banda Lab', genre: 'ROCK' },
+        headers: { [API_KEY_HEADER]: UNKNOWN_KEY },
+      }),
+    },
+    {
+      code: 401, title: 'Chave de API revogada',
+      request: 'POST /api-keys (gera uma chave)\nDELETE /api-keys/me (revoga)\nPOST /artists com a chave revogada',
+      run: () => this.revokedKey(),
     },
     {
       code: 403, title: 'CORS: header não liberado', request: 'GET /artists\nX-Teste: 1\n(antes, o navegador faz o preflight OPTIONS)',
@@ -148,13 +183,49 @@ export class StatusCodes {
   }
 
   /** Uma requisição; erro ou sucesso, devolve o que aparece na caixa de resposta. */
-  private async call(method: string, path: string, options: RawOptions = {}): Promise<Outcome> {
+  private async call(method: string, path: string, options: CaseOptions = {}): Promise<Outcome> {
     try {
-      const response = await firstValueFrom(this.api.raw(method, path, options));
+      const response = await firstValueFrom(this.api.raw(method, path, await this.withKey(method, options)));
       return { status: response.status };
     } catch (error) {
       return errorOutcome(error);
     }
+  }
+
+  /** Escritas levam a chave desta aba, a não ser que o card já mande outra ou queira testar sem nenhuma. */
+  private async withKey(method: string, options: CaseOptions): Promise<RawOptions> {
+    const { noKey, ...raw } = options;
+    if (noKey || !WRITE_METHODS.has(method) || raw.headers?.[API_KEY_HEADER]) {
+      return raw;
+    }
+    const key = await this.ensureLabKey();
+    return key ? { ...raw, headers: { ...raw.headers, [API_KEY_HEADER]: key } } : raw;
+  }
+
+  private async ensureLabKey(): Promise<string | null> {
+    this.labKey ??= await this.newKey('scene-web (Status codes)');
+    return this.labKey;
+  }
+
+  /** POST /api-keys: devolve a chave completa (ou null, se a API recusar). */
+  private async newKey(owner: string): Promise<string | null> {
+    try {
+      const response = await firstValueFrom(this.api.raw('POST', '/api-keys', { body: { owner } }));
+      return (response.body as { key?: string } | null)?.key ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Gera uma chave, revoga e tenta escrever com ela. */
+  private async revokedKey(): Promise<Outcome> {
+    const key = await this.newKey('scene-web (chave para revogar)');
+    if (!key) {
+      return { status: 0, message: 'Não deu para gerar a chave (POST /api-keys).' };
+    }
+    const headers = { [API_KEY_HEADER]: key };
+    await this.call('DELETE', '/api-keys/me', { headers });
+    return this.call('POST', '/artists', { body: { name: 'Banda Lab', genre: 'ROCK' }, headers });
   }
 
   private async conflict(): Promise<Outcome> {
@@ -212,7 +283,7 @@ export class StatusCodes {
   /** POST que deve dar certo, para os casos que precisam de um registro antes. Devolve o item criado. */
   private async created(path: string, body: unknown, headers?: Record<string, string>): Promise<Item | null> {
     try {
-      const response = await firstValueFrom(this.api.raw('POST', path, { body, headers }));
+      const response = await firstValueFrom(this.api.raw('POST', path, await this.withKey('POST', { body, headers })));
       return response.body as Item;
     } catch {
       return null;
@@ -223,7 +294,7 @@ export class StatusCodes {
     const href = item?._links?.['delete']?.href;
     if (!href) return;
     try {
-      await firstValueFrom(this.api.raw('DELETE', href));
+      await firstValueFrom(this.api.raw('DELETE', href, await this.withKey('DELETE', {})));
     } catch {
       // se a limpeza falhar, o registro de teste fica; não muda o resultado do card
     }

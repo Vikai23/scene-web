@@ -63,6 +63,8 @@
     }
   </section>
 
+  <app-api-key-panel />
+
   <nav class="tabs" aria-label="Seções">
     @for (tab of tabs; track tab.path) {
       <a class="tab" [class.tab-codes]="tab.codes" [routerLink]="tab.path" routerLinkActive="active" ariaCurrentWhenActive="page">

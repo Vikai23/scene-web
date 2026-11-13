@@ -255,6 +255,23 @@ a:hover { background: var(--ink); color: var(--paper); text-decoration: none; }
 .link[data-state="offline"] .wire span { background: #000; color: var(--paper); }
 .cors-help { margin: 0 24px 22px; padding: 10px 14px; border-left: 6px solid var(--blood); background: var(--paper-hi); max-width: 80ch; }
 
+/* ---------- Chave de API (X-API-Key) ---------- */
+.key-window { --acc: var(--cyan); margin-bottom: 40px; }
+.key-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 16px 32px; align-items: start; }
+.key-about .block-title { margin-bottom: 8px; }
+.key-about .hint { max-width: 56ch; font-size: 13px; }
+.key-state { display: grid; gap: 10px; min-width: 0; }
+.key-row { display: flex; gap: 8px; align-items: center; }
+.key-value { flex: 1; min-width: 0; padding: 8px 10px; background: #000; color: var(--paper); font-size: 13px; overflow-wrap: anywhere; }
+.key-value.revoked { text-decoration: line-through; color: var(--on-black); }
+.key-state .chips { margin: 0; }
+.key-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.key-form .field { flex: 1 1 200px; }
+.key-state .outcome { margin-top: 0; }
+@media (max-width: 760px) {
+  .key-body { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* ---------- Abas: a barra de navegação do perfil ---------- */
 .tabs {
   display: flex; flex-wrap: wrap; gap: 10px;
@@ -424,14 +441,26 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .outcome .details { margin: 6px 0 0; padding-left: 18px; font: 13px/1.5 var(--f-mono); }
 .outcome .button-row { margin-top: 10px; }
 
-/* ---------- Versões do artista lado a lado ---------- */
-.versions-diff { margin: 12px 0 10px; font-size: 14px; color: var(--ink-2); }
-.versions-diff code { font-size: 13px; color: var(--ink); }
+/* ---------- Versões do artista: o que muda e os dois JSON lado a lado ---------- */
+.versions-subtitle { margin: 18px 0 8px; font: 700 15px/1.3 var(--f-mono); }
+.versions-table { width: 100%; border-collapse: collapse; border-top: 2px solid #000; font-size: 14px; }
+.versions-table th { padding: 7px 10px; text-align: left; font: 700 12px/1.4 var(--f-mono); background: rgba(0, 0, 0, .05); border-bottom: 1px solid var(--rule); }
+.versions-table td { padding: 8px 10px; vertical-align: top; border-bottom: 1px solid var(--rule); line-height: 1.5; }
+.versions-table code { font-size: 13px; overflow-wrap: anywhere; }
+.versions-table .absent { color: var(--ink-3); font-style: italic; }
+.versions-same { margin: 10px 0 0; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+.versions-same code { font-size: 13px; color: var(--ink); }
 .versions-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .version-column { min-width: 0; display: grid; gap: 8px; align-content: start; }
 .version-column .json { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 @media (max-width: 560px) {
   .versions-grid { grid-template-columns: minmax(0, 1fr); }
+  /* No celular, cada linha da tabela vira um bloco com o nome de cada coluna na frente */
+  .versions-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .versions-table, .versions-table tbody, .versions-table tr, .versions-table td { display: block; }
+  .versions-table tr { padding: 8px 0; border-bottom: 1px solid var(--rule); }
+  .versions-table td { padding: 2px 4px; border: 0; }
+  .versions-table td::before { content: attr(data-label) ": "; font: 700 12px/1.5 var(--f-mono); color: var(--ink-3); }
 }
 
 /* ---------- Status codes ---------- */

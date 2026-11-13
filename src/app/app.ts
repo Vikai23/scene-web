@@ -4,6 +4,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { API_URL } from './core/api.config';
 import { RESOURCES, RESOURCE_KEYS } from './core/resources';
 import { StatusService } from './core/status.service';
+import { ApiKeyPanel } from './shared/api-key-panel';
 import { TrafficLog } from './shared/traffic-log';
 
 interface Tab {
@@ -15,7 +16,7 @@ interface Tab {
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TrafficLog],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ApiKeyPanel, TrafficLog],
   templateUrl: './app.html',
 })
 export class App {
