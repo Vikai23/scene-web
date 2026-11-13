@@ -1,0 +1,105 @@
+<section class="window list-window" aria-labelledby="list-title">
+  <p class="titlebar">{{ config().key }}.exe</p>
+  <div class="window-body">
+    <div class="section-head">
+      <p class="indx">INDX.{{ config().number }}</p>
+      <h2 id="list-title">{{ list().title }}</h2>
+      <p class="source"><span class="method">GET</span> <code>{{ path(list().url) }}</code></p>
+    </div>
+
+    <form class="toolbar" novalidate (submit)="submit($event)">
+      <label class="field field-grow">
+        <span>{{ config().search.label }}</span>
+        <input
+          type="search"
+          autocomplete="off"
+          spellcheck="false"
+          [placeholder]="config().search.placeholder"
+          [value]="store.search()"
+          (input)="setSearch($event)"
+        />
+      </label>
+      @if (config().filter; as filter) {
+        <label class="field">
+          <span>{{ filter.label }}</span>
+          <select (change)="setFilter($event)">
+            <option value="" [selected]="store.filter() === ''">todos</option>
+            @for (option of filter.options; track option) {
+              <option [value]="option" [selected]="store.filter() === option">{{ option }}</option>
+            }
+          </select>
+        </label>
+      }
+      <label class="field">
+        <span>sort</span>
+        <select (change)="setSortField($event)">
+          @for (field of config().sort; track field) {
+            <option [value]="field" [selected]="store.sortField() === field">{{ field }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span>direção</span>
+        <select (change)="setSortDir($event)">
+          <option value="asc" [selected]="store.sortDir() === 'asc'">asc</option>
+          <option value="desc" [selected]="store.sortDir() === 'desc'">desc</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>size</span>
+        <select (change)="setSize($event)">
+          @for (size of sizes; track size) {
+            <option [value]="size" [selected]="store.size() === size">{{ size }}</option>
+          }
+        </select>
+      </label>
+      <div class="toolbar-actions">
+        <button type="submit">Buscar</button>
+        <button type="button" class="quiet" (click)="store.resetToolbar()">Ver todos</button>
+      </div>
+    </form>
+
+    <ul class="items" aria-live="polite" [class.loading]="list().loading">
+      @if (list().error; as error) {
+        <li class="list-message"><app-outcome [outcome]="error" /></li>
+      } @else if (list().loading && !list().result) {
+        <li class="list-message">carregando...</li>
+      } @else {
+        @for (item of items(); track item.id) {
+          <li>
+            <button
+              type="button"
+              class="item"
+              [attr.data-id]="item.id"
+              [attr.aria-current]="item.id === store.openId() ? 'true' : null"
+              (click)="open(item)"
+            >
+              <span class="item-id">#{{ item.id }}</span>
+              <span class="item-title">{{ config().title(item) }}</span>
+              <span class="item-meta">
+                @for (value of meta(item); track $index) {
+                  <span>{{ value }}</span>
+                }
+              </span>
+            </button>
+          </li>
+        } @empty {
+          <li class="list-message">Nenhum resultado. A API devolveu uma página vazia (200 OK), não um erro.</li>
+        }
+      }
+    </ul>
+
+    <div class="pager">
+      <button type="button" class="quiet" [disabled]="!links()['first']" (click)="goTo('first')">first</button>
+      <button type="button" class="quiet" [disabled]="!links()['prev']" (click)="goTo('prev')">prev</button>
+      <span>{{ pageInfo() }}</span>
+      <button type="button" class="quiet" [disabled]="!links()['next']" (click)="goTo('next')">next</button>
+      <button type="button" class="quiet" [disabled]="!links()['last']" (click)="goTo('last')">last</button>
+    </div>
+    <p class="pager-note">
+      Os botões de página seguem os links HATEOAS <code>_links.first</code>, <code>prev</code>, <code>next</code> e
+      <code>last</code> da própria resposta.
+    </p>
+    <button type="button" class="primary new-item" (click)="create()">+ {{ config().createLabel }}</button>
+  </div>
+</section>

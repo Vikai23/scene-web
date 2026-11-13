@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Disco de vinil com pentagrama invertido">
+  <circle cx="32" cy="32" r="31" fill="#000"/>
+  <circle cx="32" cy="32" r="27.5" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width=".8"/>
+  <circle cx="32" cy="32" r="24.5" fill="none" stroke="#ff2ea6" stroke-opacity=".7" stroke-width="1"/>
+  <path d="M32.00 52.00 L20.24 15.82 L51.02 38.18 L12.98 38.18 L43.76 15.82 Z" fill="none" stroke="#fff" stroke-width="2.6" stroke-linejoin="miter"/>
+  <circle cx="32" cy="32" r="3.2" fill="#c8102e"/>
+</svg>

@@ -1,0 +1,111 @@
+<section class="window detail-window" aria-labelledby="detail-title">
+  <p class="titlebar">{{ titlebar() }}</p>
+  <div class="window-body" aria-live="polite">
+    @if (view(); as v) {
+      <div class="detail-head">
+        <p class="indx">{{ config().one.toUpperCase() }} #{{ v.item.id }}</p>
+        <h2 id="detail-title">{{ title(v.item) }}</h2>
+        <div class="chips"><span class="chip dark">GET {{ path(v.href) }}</span></div>
+      </div>
+
+      @if (v.notice; as notice) {
+        <app-outcome [outcome]="notice">
+          @if (v.replay; as replay) {
+            <div class="button-row">
+              <button type="button" class="small" (click)="store.replay(replay)">
+                Repetir o mesmo POST com a mesma key
+              </button>
+            </div>
+          }
+        </app-outcome>
+      }
+
+      <dl class="props">
+        @for (prop of props(v.item); track prop.name) {
+          <dt>{{ prop.name }}</dt>
+          <dd [class.null]="isNull(prop.value)">{{ isNull(prop.value) ? 'null' : prop.value }}</dd>
+        }
+      </dl>
+
+      @if (config().key === 'artists') {
+        <app-artist-versions [artist]="v.item" />
+      }
+      @if (config().key === 'playlists') {
+        <app-playlist-tracks [playlist]="v.item" />
+      }
+      @if (config().key === 'tracks') {
+        <app-add-to-playlist [track]="v.item" />
+      }
+
+      <section class="block">
+        <h3 class="block-title">Links HATEOAS <code>_links</code></h3>
+        <p class="hint">A página não monta esses endereços: ela usa os que a própria resposta trouxe.</p>
+        <ul class="links">
+          @for (link of links(v.item); track link.rel) {
+            <li>
+              <button type="button" (click)="store.follow(v.item, link.rel, link.href)">
+                <span class="link-rel">{{ link.rel }}</span>
+                <span class="link-href">GET {{ link.path }}</span>
+                <span class="link-what">{{ link.what }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+
+      <section class="block">
+        <h3 class="block-title">Ações <code>_links.update e _links.delete</code></h3>
+        <div class="button-row">
+          <button type="button" (click)="store.startEdit(v.item)">Editar (PUT)</button>
+          <button type="button" class="danger" (click)="confirming.set(v.item.id)">Excluir (DELETE)</button>
+          @if (config().key === 'artists') {
+            <button type="button" class="quiet" (click)="newAlbum(v.item)">+ Álbum deste artista</button>
+          }
+          @if (config().key === 'albums') {
+            <button type="button" class="quiet" (click)="newTrack(v.item)">+ Faixa neste álbum</button>
+          }
+        </div>
+        @if (confirming() === v.item.id) {
+          <div class="confirm">
+            <span>Excluir {{ config().one }} #{{ v.item.id }}? {{ config().cascade }}</span>
+            <button type="button" class="danger small" (click)="remove(v.item)">Sim, excluir</button>
+            <button type="button" class="quiet small" (click)="confirming.set(null)">Cancelar</button>
+          </div>
+        }
+      </section>
+
+      <details class="block json-box">
+        <summary>JSON da resposta</summary>
+        <pre class="json" tabindex="0">{{ v.item | json }}</pre>
+      </details>
+    } @else if (form(); as f) {
+      <app-item-form [editing]="f.editing" [preset]="f.preset" />
+    } @else if (missing(); as m) {
+      <div class="detail-head">
+        <p class="indx">{{ config().one.toUpperCase() }}</p>
+        <h2 id="detail-title">Não encontrado</h2>
+        <div class="chips"><span class="chip dark">GET {{ path(m.href) }}</span></div>
+      </div>
+      <app-outcome [outcome]="m.outcome">
+        @if (m.offer; as offer) {
+          <div class="button-row">
+            <button type="button" class="primary small" (click)="store.startCreate(offer.preset)">{{ offer.label }}</button>
+          </div>
+        }
+      </app-outcome>
+    } @else if (loading()) {
+      <p class="list-message">carregando...</p>
+    } @else {
+      @if (empty()?.notice; as notice) {
+        <app-outcome [outcome]="notice" />
+      }
+      <div class="empty">
+        <h2 id="detail-title" class="empty-title">Nada aberto ainda</h2>
+        <p class="about">
+          Escolha um item na lista para ver os dados, os links HATEOAS e as ações (PUT e DELETE), ou cadastre um novo.
+        </p>
+        <button type="button" class="primary" (click)="store.startCreate()">+ {{ config().createLabel }}</button>
+      </div>
+    }
+  </div>
+</section>

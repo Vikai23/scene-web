@@ -1,0 +1,88 @@
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" routerLink="/" aria-label="Scene API web: voltar para o início">
+      <img src="img/music-logo.svg" alt="" width="34" height="34" />
+      <span class="brand-name">Scene API</span>
+      <span class="brand-tag">web</span>
+    </a>
+    <div class="controls">
+      <div
+        class="tokens"
+        [attr.data-empty]="status.remaining() === 0"
+        [title]="'Rate limiting: tokens que sobraram no bucket deste IP' + (status.reset() !== null ? '. Bucket cheio de novo em ' + status.reset() + ' s.' : '')"
+      >
+        <span class="control-label">rate limit</span>
+        <span class="tokens-meter" aria-hidden="true">
+          <span class="tokens-fill" [style.width.%]="status.fill()"></span>
+        </span>
+        <span class="tokens-count">
+          @if (wait() > 0) {
+            429 · {{ wait() }} s
+          } @else if (status.limit() !== null) {
+            {{ status.remaining() }}/{{ status.limit() }} tokens
+          } @else {
+            -- tokens
+          }
+        </span>
+      </div>
+      <span class="online" [attr.data-state]="online()">
+        {{ online() === 'offline' ? 'API offline' : online() === 'checking' ? 'conectando' : 'online now' }}
+      </span>
+    </div>
+  </div>
+  <div class="ticker" aria-hidden="true">
+    <p class="ticker-track">xXx now playing: Apology - Alesana xXx mood: consumindo a API de outra origem xXx Origin: http://localhost:4200 xXx X-Idempotency-Key xXx token bucket: 100 tokens por minuto xXx 201 Created xXx 403 Forbidden xXx 422 Unprocessable Content xXx 429 Too Many Requests (slow down!!) xXx thanks for the add :3 xXx best viewed at 1024x768 xXx </p>
+  </div>
+</header>
+
+<main class="page">
+  <section class="window hero" aria-labelledby="hero-title">
+    <p class="titlebar">Scene API web - Angular</p>
+    <div class="hero-body">
+      <h1 class="glitch" id="hero-title" data-text="Scene API">Scene API</h1>
+      <p class="hero-lines">
+        now playing: Apology - Alesana<br />mood: consumindo a API de outra origem<br />status: in a relationship with
+        CORS<br />last login: just now
+      </p>
+      <p class="signature">made by Vinícius &lt;3</p>
+    </div>
+    <!-- As duas origens e a ligação entre elas: o estado muda depois da primeira chamada à API -->
+    <div class="link" [attr.data-state]="status.connection()">
+      <div class="origin">
+        <span class="origin-name">esta página (header Origin)</span>
+        <code>{{ pageOrigin }}</code>
+      </div>
+      <div class="wire"><span>{{ corsLabel() }}</span></div>
+      <div class="origin">
+        <span class="origin-name">a API</span>
+        <code>{{ apiUrl }}</code>
+      </div>
+    </div>
+    @if (corsHelp(); as help) {
+      <p class="cors-help">{{ help }}</p>
+    }
+  </section>
+
+  <nav class="tabs" aria-label="Seções">
+    @for (tab of tabs; track tab.path) {
+      <a class="tab" [class.tab-codes]="tab.codes" [routerLink]="tab.path" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <span class="tab-num">{{ tab.number }}</span>{{ tab.label }}
+      </a>
+    }
+  </nav>
+
+  <div class="workspace">
+    <div class="workspace-main">
+      <router-outlet />
+    </div>
+    <app-traffic-log />
+  </div>
+</main>
+
+<footer class="foot">
+  <p class="foot-sign">thanks for the add!! xoxo</p>
+  <p>
+    Projeto final de Web Services (Senac TSI), Parte 2. A documentação da API fica no
+    <a [href]="apiUrl + '/swagger-ui/index.html'">Swagger UI</a>.
+  </p>
+</footer>

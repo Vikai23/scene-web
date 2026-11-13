@@ -1,0 +1,107 @@
+@let item = editing();
+<div class="detail-head">
+  <p class="indx">{{ item ? 'EDITAR ' + config().one.toUpperCase() + ' #' + item.id : 'CADASTRO' }}</p>
+  <h2 id="detail-title">{{ item ? config().title(item) : config().createLabel }}</h2>
+  <div class="chips"><span class="chip dark">{{ method() }} {{ path(target()) }}</span></div>
+</div>
+<p class="about form-about">
+  O formulário não confere nada sozinho: quem valida é a API (Bean Validation). Se algo estiver errado, o 400 Bad
+  Request aponta o campo.
+</p>
+
+<form class="form" novalidate [formGroup]="form()" (ngSubmit)="submit()">
+  @for (field of config().fields; track field.name) {
+    <label class="field">
+      <span class="field-label">
+        {{ field.label }} <code>{{ field.name }}</code>
+        @if (field.optional) {
+          <em class="hint">opcional</em>
+        }
+      </span>
+      @switch (field.type) {
+        @case ('select') {
+          <select
+            [formControlName]="field.name"
+            [attr.name]="field.name"
+            [attr.aria-invalid]="fieldErrors()[field.name] ? 'true' : null"
+          >
+            <option value="">(escolha)</option>
+            @for (option of field.options; track option) {
+              <option [value]="option">{{ option }}</option>
+            }
+          </select>
+        }
+        @case ('ref') {
+          <select
+            [formControlName]="field.name"
+            [attr.name]="field.name"
+            [attr.aria-invalid]="fieldErrors()[field.name] ? 'true' : null"
+          >
+            <option value="">(escolha)</option>
+            @for (option of refs()[field.name] ?? []; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        }
+        @case ('textarea') {
+          <textarea
+            spellcheck="false"
+            [formControlName]="field.name"
+            [attr.name]="field.name"
+            [attr.aria-invalid]="fieldErrors()[field.name] ? 'true' : null"
+          ></textarea>
+        }
+        @default {
+          <input
+            autocomplete="off"
+            spellcheck="false"
+            [type]="field.type === 'number' ? 'number' : 'text'"
+            [attr.inputmode]="field.type === 'number' ? 'numeric' : null"
+            [formControlName]="field.name"
+            [attr.name]="field.name"
+            [attr.aria-invalid]="fieldErrors()[field.name] ? 'true' : null"
+          />
+        }
+      }
+      @if (field.hint) {
+        <span class="hint">{{ field.hint }}</span>
+      }
+      @if (fieldErrors()[field.name]; as message) {
+        <span class="field-error">{{ message }}</span>
+      }
+    </label>
+  }
+
+  @if (!item) {
+    <div class="key-box">
+      <p class="field-label">Idempotência: header <code>X-Idempotency-Key</code></p>
+      <div class="key-row">
+        <input
+          type="text"
+          spellcheck="false"
+          autocomplete="off"
+          aria-label="X-Idempotency-Key"
+          [value]="key()"
+          (input)="setKey($event)"
+        />
+        <button type="button" class="quiet small" (click)="key.set(newKey())">gerar outra</button>
+      </div>
+      <label class="check">
+        <input type="checkbox" [checked]="sendKey()" (change)="setSendKey($event)" />
+        mandar o header (sem ele o POST funciona como sempre)
+      </label>
+      <p class="hint">
+        Repetir o mesmo POST com a mesma key não cria outro registro: a API devolve a resposta original, com
+        X-Idempotent-Replayed: true.
+      </p>
+    </div>
+  }
+
+  <div class="button-row">
+    <button type="submit" class="primary" [disabled]="busy()">{{ item ? 'Salvar (PUT)' : 'Cadastrar (POST)' }}</button>
+    <button type="button" class="quiet" (click)="store.cancelForm(item)">Cancelar</button>
+  </div>
+  @if (outcome(); as result) {
+    <app-outcome [outcome]="result" />
+  }
+</form>

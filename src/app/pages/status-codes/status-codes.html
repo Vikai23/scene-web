@@ -1,0 +1,32 @@
+<section class="window codes-window" aria-labelledby="codes-title">
+  <p class="titlebar">status-codes.exe</p>
+  <div class="window-body">
+    <div class="section-head">
+      <p class="indx">INDX.!!</p>
+      <h2 id="codes-title">Status codes</h2>
+      <p class="about">
+        Cada botão provoca um erro de propósito, do jeito que um cliente de verdade erraria. A resposta aparece no card
+        e no Tráfego, sempre no mesmo formato de erro da API.
+      </p>
+    </div>
+    <div class="codes-grid">
+      @for (statusCase of cases; track $index; let index = $index) {
+        @let result = results()[index];
+        <article class="code-card" [attr.data-result]="result ? (result.hit ? 'ok' : 'miss') : null">
+          <p class="code-number">{{ statusCase.code }}</p>
+          <p class="code-name">{{ name(statusCase.code) }}</p>
+          <h3>{{ statusCase.title }}</h3>
+          <pre class="code-request">{{ statusCase.request }}</pre>
+          <button type="button" class="primary small" [disabled]="running() !== null" (click)="run(index)">
+            {{ running() === index ? 'Provocando...' : 'Provocar' }}
+          </button>
+          @if (result) {
+            <app-outcome [outcome]="result.outcome">
+              <p class="hint">{{ result.hit ? 'Veio o status esperado.' : 'Esperado: ' + expected(statusCase.code) + '.' }}</p>
+            </app-outcome>
+          }
+        </article>
+      }
+    </div>
+  </div>
+</section>
