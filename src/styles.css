@@ -255,23 +255,6 @@ a:hover { background: var(--ink); color: var(--paper); text-decoration: none; }
 .link[data-state="offline"] .wire span { background: #000; color: var(--paper); }
 .cors-help { margin: 0 24px 22px; padding: 10px 14px; border-left: 6px solid var(--blood); background: var(--paper-hi); max-width: 80ch; }
 
-/* ---------- Chave de API (X-API-Key) ---------- */
-.key-window { --acc: var(--cyan); margin-bottom: 40px; }
-.key-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 16px 32px; align-items: start; }
-.key-about .block-title { margin-bottom: 8px; }
-.key-about .hint { max-width: 56ch; font-size: 13px; }
-.key-state { display: grid; gap: 10px; min-width: 0; }
-.key-row { display: flex; gap: 8px; align-items: center; }
-.key-value { flex: 1; min-width: 0; padding: 8px 10px; background: #000; color: var(--paper); font-size: 13px; overflow-wrap: anywhere; }
-.key-value.revoked { text-decoration: line-through; color: var(--on-black); }
-.key-state .chips { margin: 0; }
-.key-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
-.key-form .field { flex: 1 1 200px; }
-.key-state .outcome { margin-top: 0; }
-@media (max-width: 760px) {
-  .key-body { grid-template-columns: minmax(0, 1fr); }
-}
-
 /* ---------- Abas: a barra de navegação do perfil ---------- */
 .tabs {
   display: flex; flex-wrap: wrap; gap: 10px;

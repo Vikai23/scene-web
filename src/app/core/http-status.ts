@@ -4,7 +4,6 @@ export const STATUS_NAMES: Record<number, string> = {
   201: 'Created',
   204: 'No Content',
   400: 'Bad Request',
-  401: 'Unauthorized',
   403: 'Forbidden',
   404: 'Not Found',
   405: 'Method Not Allowed',
