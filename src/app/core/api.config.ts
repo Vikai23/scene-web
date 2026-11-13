@@ -2,7 +2,7 @@
  * Endereço da Scene API. Este front roda em outra origem (http://localhost:4200) e chama a API pelo navegador;
  * as respostas só chegam ao JavaScript porque o CORS da API libera essa origem (scene.cors.allowed-origins).
  */
-export const API_URL = 'http://localhost:8080';
+export const API_URL = 'https://scene-api-kwmn.onrender.com/';
 
 /** Headers da Parte 2 que o front envia ou lê. */
 export const API_KEY_HEADER = 'X-API-Key';
